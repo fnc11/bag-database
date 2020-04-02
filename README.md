@@ -50,9 +50,14 @@ are stored and will be manually uploading files there.
 - **Viewing Image Streams**: You can view any sensor_msgs/Image or
   sensor_msgs/CompressedImage topic as an embedded video stream by clicking
   on an icon next to the topic in the bag details window.
-- **Tagging**: Bags can be tagged and searched for with arbitrary metadata 
-  strings.  Existing tags on arbitrary metadata topics in bag files will be
-  automatically read.
+- **Predefined Tags**: Bags can be tagged and searched for predefined metadata 
+  strings. For example here the tags are fixed to Place, Mode and Others, see 
+  images below. The code regarding these changes is simple and self-explainable, 
+  more tags can be added similarly. Existing tags on arbitrary metadata topics 
+  in bag files will be automatically read.
+  
+  ![Sample Screenshot](doc/Place_tag.png)
+  ![Sample Screenshot](doc/All_tags.png)
 
 ## Compiling
 
