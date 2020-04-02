@@ -38,7 +38,7 @@ import java.util.Collection;
 import java.util.Set;
 
 @Repository
-@Transactional(readOnly = true)
+@Transactional
 public interface TagRepository extends JpaRepository<Tag, TagKey> {
     Tag findByTagAndBagId(String tag, Long bagId);
     Set<Tag> findByTagAndValue(String tag, String value);

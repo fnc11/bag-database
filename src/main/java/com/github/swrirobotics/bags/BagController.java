@@ -307,6 +307,30 @@ public class BagController {
         myLogger.info("Set tags.");
     }
 
+    @RequestMapping("/setTagsForBag")
+    public void setTagsForBag(@RequestParam(required = false) String placeValue,
+                              @RequestParam(required = false) String modeValue,
+                              @RequestParam(required = false) String othersValue,
+                              @RequestParam Long bagId) throws NonexistentBagException {
+        String placeTag = "Place";
+        String emptyPlace = "Select Place";
+        String modeTag = "Mode";
+        String emptyMode = "Select Mode";
+        String othersTag="Others";
+        String emptyOthers = "Any Other Information";
+        myLogger.info("setTagsForBag: " + placeValue + " and " + modeValue +
+                " and "+othersValue +" with bagID: "+bagId);
+        if(placeValue!=null && (!placeValue.equals(emptyPlace)))
+            myBagService.setTagForBag(placeTag, placeValue, bagId);
+        if(modeValue!=null && (!modeValue.equals(emptyMode)))
+            myBagService.setTagForBag(modeTag, modeValue, bagId);
+        if(othersValue!=null && (!othersValue.equals(emptyOthers)))
+            myBagService.setTagForBag(othersTag, othersValue, bagId);
+
+
+        myLogger.info("Set tags.");
+    }
+
     /**
      * Removes tags with given names from a bag file.
      * @param tagNames The names of the tags to remove.

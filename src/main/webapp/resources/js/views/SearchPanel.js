@@ -121,7 +121,7 @@ Ext.define('BagDatabase.views.SearchPanel', {
             name: 'field',
             inputValue: 'tags',
             value: true,
-            qtip: 'Additional Metadata.'
+            qtip: "Pre-defined tag that is manually added by a user. Searching is supported for values independent of their key. Substring-search supported but not regexp."
         }, {
             boxLabel: 'Path',
             name: 'field',

@@ -32,7 +32,7 @@ Ext.define('BagDatabase.views.TagGrid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.tagGrid',
     title: 'Tags',
-    requires: ['BagDatabase.views.SetTagWindow'],
+    requires: ['BagDatabase.views.SetTagsWindow'],
     store: {
         xtype: 'jsonstore',
         model: 'BagDatabase.models.Tag',
@@ -50,7 +50,7 @@ Ext.define('BagDatabase.views.TagGrid', {
         text: 'Value: ', dataIndex: 'value', flex: 1
     }],
     buttons: [{
-        text: 'Add',
+        text: 'Add/Edit',
         itemId: 'addButton',
         iconCls: 'tag-add-icon',
         disabled: false,
@@ -60,13 +60,13 @@ Ext.define('BagDatabase.views.TagGrid', {
             // Weird note: 'tagName' must be some kind of reserved word
             // somewhere in ExtJs, because trying to pass in a parameter
             // name that causes all kinds of weird issues.
-            var win = Ext.create('BagDatabase.views.SetTagWindow', {
+            var win = Ext.create('BagDatabase.views.SetTagsWindow', {
                 bagIds: [bagId],
                 tagGrid: tagGrid
             });
             win.show();
         }
-    }, {
+    },{
         text: 'Remove',
         itemId: 'removeButton',
         iconCls: 'tag-delete-icon',
