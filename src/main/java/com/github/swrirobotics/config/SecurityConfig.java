@@ -32,6 +32,8 @@ package com.github.swrirobotics.config;
 
 import com.github.swrirobotics.account.UserService;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,7 +66,11 @@ import java.io.IOException;
 import java.util.Set;
 
 @EnableWebSecurity
-class SecurityConfig{
+class SecurityConfig {
+    @Autowired
+    private ConfigService myConfigService;
+
+    final private Logger myLogger = LoggerFactory.getLogger(SecurityConfig.class);
 
     private class CsrfAccessDeniedHandler extends AccessDeniedHandlerImpl {
         @Override
@@ -141,6 +147,8 @@ class SecurityConfig{
     @Configuration
     @Order(2)
     public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+        @Autowired
+        private Environment myEnvironment;
 
         @Bean
         public AuthenticationSuccessHandler authenticationSuccessHandler() {
@@ -154,31 +162,41 @@ class SecurityConfig{
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
-            http
-                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.ALWAYS).and()
-                    .exceptionHandling().accessDeniedHandler(accessDeniedHandler()).and()
-                    .authorizeRequests()
-                    .antMatchers(
-                            "/favicon.ico",
-                            "/generalError",
-                            "/resources/**",
-                            "/signup").permitAll()
-                    .anyRequest().fullyAuthenticated()
-                    .and()
-                    .formLogin()
-                    .loginPage("/ldap_login")
-                    .successHandler(authenticationSuccessHandler())
-                    .permitAll()
-                    .and()
-                    .logout()
-                    .logoutUrl("/logout").permitAll()
-                    .logoutSuccessUrl("/ldap_login?logout");
+            Set<String> profileSet = Sets.newHashSet(myEnvironment.getActiveProfiles());
+            String ldapServer = myConfigService.getConfiguration().getLdapServer();
+            // Only enable LDAP integration if a LDAP server is set in the configuration
+            // or if we are running in unit test mode.
+            if (profileSet.contains("test") || ldapServer != null && !ldapServer.isEmpty()) {
+                http
+                        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.ALWAYS).and()
+                        .exceptionHandling().accessDeniedHandler(accessDeniedHandler()).and()
+                        .authorizeRequests()
+                        .antMatchers(
+                                "/favicon.ico",
+                                "/generalError",
+                                "/resources/**",
+                                "/signup").permitAll()
+                        .anyRequest().fullyAuthenticated()
+                        .and()
+                        .formLogin()
+                        .loginPage("/ldap_login")
+                        .successHandler(authenticationSuccessHandler())
+                        .permitAll()
+                        .and()
+                        .logout()
+                        .logoutUrl("/logout").permitAll()
+                        .logoutSuccessUrl("/ldap_login?logout");
+            }
         }
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth
-                    .authenticationProvider(ldapAuthenticationProvider());
+            String ldapServer = myConfigService.getConfiguration().getLdapServer();
+            if (ldapServer != null && !ldapServer.isEmpty()) {
+                myLogger.info("Enabling LDAP authentication.");
+                auth
+                        .authenticationProvider(ldapAuthenticationProvider());
+            }
         }
 
         @Bean
@@ -188,21 +206,34 @@ class SecurityConfig{
         }
 
         private LdapAuthoritiesPopulator ldapAuthoritiesPopulator() throws Exception {
-            return new DefaultLdapAuthoritiesPopulator(ldapContextSource(), "ou=people");
+            String searchBase = myConfigService.getConfiguration().getLdapSearchBase();
+            myLogger.info("LDAP search base: [" + searchBase + "]");
+            return new DefaultLdapAuthoritiesPopulator(ldapContextSource(), searchBase);
         }
 
         @Bean
         public LdapContextSource ldapContextSource() throws Exception {
-            PasswordPolicyAwareContextSource contextSource = new PasswordPolicyAwareContextSource("ldap://localhost:389/dc=springframework,dc=org");
-//        contextSource.setUserDn("cn=system_user,OU=people,dc=springframework,dc=org");
-//        contextSource.setPassword("XXXXXX");
+            String ldapProvider = myConfigService.getConfiguration().getLdapServer();
+            myLogger.info("LDAP provider:  [" + ldapProvider + "]");
+
+            if (ldapProvider.isEmpty()) {
+                ldapProvider = "ldap://localhost:389/dc=springframework,dc=org";
+            }
+            PasswordPolicyAwareContextSource contextSource = new PasswordPolicyAwareContextSource(ldapProvider);
+            String binddn = myConfigService.getConfiguration().getLdapBindDn();
+            if (!binddn.isEmpty()) {
+                contextSource.setUserDn(binddn);
+                contextSource.setPassword(myConfigService.getConfiguration().getLdapBindPassword());
+            }
             return contextSource;
         }
 
         @Bean
         public LdapAuthenticator ldapAuthenticator() throws Exception {
             BindAuthenticator authenticator = new BindAuthenticator(ldapContextSource());
-            authenticator.setUserDnPatterns(new String[] {"uid={0},ou=people"});
+            String userPattern = myConfigService.getConfiguration().getLdapUserPattern();
+            myLogger.info("LDAP user pattern: [" + userPattern + "]");
+            authenticator.setUserDnPatterns(new String[] {myConfigService.getConfiguration().getLdapUserPattern()});
             return authenticator;
         }
     }
